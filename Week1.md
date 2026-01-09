@@ -32,6 +32,7 @@ A.
 3. KeyError, df[[0,1]]과 같이 감싸줘야함
 
 seaborn: pandas와 matplotlib 기반으로 더 자세한 시각화를 할 수 있는 모듈
+
 scikit-learn: 분류(Classification), 회귀(Regression), 군집화(Clustering) 등 알고리즘을 제공하며, 모델 학습에 `fit()`(학습), `predict()`(예측) 명령어를 사용
 
 ### 2. 제1종 오류와 제2종 오류에 대해 설명해주세요.
