@@ -203,18 +203,97 @@ group by p.size
 order by revenue desc;
 
 -- 고급 3. pizza_types 테이블에서 재료(ingredients)의 단어 수를 계산하여 각 피자 타입의 재료가 몇 가지인지 출력하세요. 
-
+select 
+    pizza_type_id,
+    ingredients,
+    (LENGTH(ingredients) - LENGTH(replace(ingredients, ',', ''))) + 1 as ingredient_count
+from 
+    pizza_types;
 
 -- 고급 4. order_details, pizzas, pizza_types 테이블을 JOIN하여 각 피자 종류의 총 수익을 계산하고, 수익이 높은 순서대로 출력하세요.
-
+select t.pizza_type_id, t.name, round(sum(de.quantity * p.price),2) as revenue
+from order_details de
+join pizzas p
+on de.pizza_id = p.pizza_id
+join pizza_types t
+on p.pizza_type_id = t.pizza_type_id
+group by t.pizza_type_id, t.name
+order by revenue desc;
 
 -- 고급 5. order_details, pizzas, pizza_types 테이블을 JOIN하여 카테고리별 총 판매 수량을 계산하고, 가장 많이 팔린 카테고리를 출력하세요.
-
+select t.category as category, round(sum(de.quantity),2) as quantity
+from order_details de
+join pizzas p
+on de.pizza_id = p.pizza_id
+join pizza_types t
+on p.pizza_type_id = t.pizza_type_id
+group by category
+order by quantity desc
+limit 1;
 
 -- 고급 6. 월별로 피자 주문 수량이 가장 많았던 날(date)의 날짜와 총 수량을 출력해주세요.
-
+with daily as (
+	select 
+		month(o.date) as month, 
+        o.date as date, 
+        sum(de.quantity) as quantity
+	from orders o 
+	join order_details de
+		on o.order_id = de.order_id
+	group by month(o.date), o.date
+),
+ranks as (
+	 select 
+		month, 
+        date, 
+        quantity,
+        rank() over (partition by month order by quantity desc) as ranking
+	from daily
+)
+select month, date, quantity
+from ranks
+where ranking = 1
+order by month;
 
 -- 고급 7. 피자별(pizza_id) 판매 수량 순위에서 피자별 판매 수량 상위 10% 이내에 들기 위해서는 최소 몇 판이 판매가 이루어졌는지 구해주세요.
 
+-- 첫번째 시도: percent_rank 활용
+with pizzas_sold as (select 
+	pizza_id,
+    sum(quantity) as quantity
+from order_details
+group by pizza_id
+order by quantity desc
+),
+percentile_table as (select 
+	pizza_id,
+    quantity,
+    round(percent_rank() over (order by quantity desc),3) as percentile
+    from pizzas_sold
+)
+select quantity
+from percentile_table
+where percentile <= 0.1
+order by quantity
+limit 1;
 
+-- 두번째 시도: ntile 활용
+with pizzas_sold as (select 
+	pizza_id,
+    sum(quantity) as quantity
+from order_details
+group by pizza_id
+order by quantity desc
+),
+percentile_table as (select 
+	pizza_id,
+    quantity,
+    ntile(10) over (order by quantity desc) as percentile
+    from pizzas_sold
+)
+select quantity
+from percentile_table
+where percentile = 1
+order by quantity
+limit 1
 
