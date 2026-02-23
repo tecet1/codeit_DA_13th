@@ -1,0 +1,15 @@
+WITH RECURSIVE employee_hierarchy (id, name, manager_id, level) AS (
+    -- Anchor member: selects the top-level employees (those with no manager)
+    SELECT id, name, manager_id, 1 AS level
+    FROM employees
+    WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- Recursive member: joins employees with the CTE to find subordinates
+    SELECT e.id, e.name, e.manager_id, eh.level + 1
+    FROM employees e
+    JOIN employee_hierarchy eh ON e.manager_id = eh.id
+)
+-- Statement that uses the CTE
+SELECT * FROM employee_hierarchy ORDER BY level, id;
